@@ -90,3 +90,11 @@ Para probar un script CGI específico:
 ## Consideraciones legales
 
 Esta herramienta está diseñada únicamente para fines educativos y de pruebas de penetración autorizadas. El uso de esta herramienta contra sistemas sin permiso explícito es ilegal y puede resultar en consecuencias legales.
+
+## Contribuciones
+
+Las contribuciones son bienvenidas. Por favor, envía pull requests para mejoras o correcciones.
+
+## Licencia
+
+Este proyecto está licenciado bajo la licencia MIT - ver el archivo LICENSE para más detalles.
