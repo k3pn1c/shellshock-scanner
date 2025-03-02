@@ -1,2 +1,0 @@
-gobuster
-netcat-traditional
